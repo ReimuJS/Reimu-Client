@@ -21,6 +21,12 @@ export class Reimu extends EventEmitter {
   private connected: boolean;
 
   /**
+   * The id of the connection
+   * @type {string}
+   */
+  public id?: string;
+
+  /**
    * Packets that haven't been acknoledged
    * @type {DecodedMessage[]}
    */
@@ -67,6 +73,7 @@ export class Reimu extends EventEmitter {
     this.ws.addEventListener("error", this.error);
     this.ws.addEventListener("close", this.close);
   };
+
   /**
    * Attempts to disconnect with the user
    * @param {number} code - The error code

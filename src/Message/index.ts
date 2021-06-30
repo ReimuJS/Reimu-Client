@@ -74,6 +74,11 @@ export default class Message {
         case "message":
           this.reimu.emit("message", decoded.data);
           break;
+        case "hello":
+          this.reimu.emit("connect");
+          this.reimu.id = this.reimu.id || decoded.data.id;
+          this.respond({ id: this.reimu.id });
+          break;
 
         default:
           this.reimu.disconnect(1002);
