@@ -1,0 +1,36 @@
+{
+  "name": "reimu-client",
+  "version": "0.0.0",
+  "description": "Simple and reliable real-time bidirectional communication",
+  "scripts": {
+    "build": "webpack",
+    "commit": "git-cz",
+    "acp": "git add . && npm run commit && git push"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ReimuJS/Reimu-Client.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ReimuJS/Reimu-Client/issues"
+  },
+  "homepage": "https://github.com/ReimuJS/Reimu-Client#readme",
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "devDependencies": {
+    "@types/msgpack-lite": "^0.1.7",
+    "@types/node": "^15.12.5",
+    "cz-conventional-changelog": "^3.3.0",
+    "expose-loader": "^3.0.0",
+    "msgpack-lite": "^0.1.26",
+    "semantic-release": "^17.4.4",
+    "ts-loader": "^9.2.3",
+    "typescript": "^4.3.4",
+    "webpack": "^5.41.1",
+    "webpack-cli": "^4.7.2"
+  }
+}
