@@ -1,36 +1,37 @@
-import * as msgpack from "msgpack-lite";
 import { Reimu } from "..";
 
 export default class Message {
-  constructor(event: MessageEvent, client: Reimu) {
+  constructor(message: any, client: Reimu) {
     this.reimu = client;
 
-    let decoded: any;
-    try {
-      decoded = msgpack.decode(new Uint8Array(event.data));
-    } catch (e) {
-      this.reimu.disconnect(1002);
-    }
-    if (!decoded) return;
-
-    if (!decoded.type) {
+    if (!message.type) {
       this.reimu.disconnect(1002);
       return;
     }
 
-    this.data = decoded.data;
+    if (message.type == "batch") {
+      if (!Array.isArray(message.data)) client.disconnect(1002);
+      else {
+        for (const msg of message) {
+          new Message(msg, client);
+        }
+      }
+      return;
+    }
 
-    if (decoded.id == undefined) {
-      if (!decoded.for) {
+    this.data = message.data;
+
+    if (message.id == undefined) {
+      if (!message.for) {
         this.reimu.disconnect(1002);
         return;
       }
-      this.id = decoded.for;
+      this.id = message.for;
 
-      switch (decoded.type) {
+      switch (message.type) {
         case "acknoledge":
           const droppedPacket = this.reimu.droppedPackets.find(
-            (data) => data.id == decoded.replyFor
+            (data) => data.id == message.replyFor
           );
           if (!droppedPacket) return;
           this.reimu.droppedPackets.splice(
@@ -45,7 +46,7 @@ export default class Message {
       }
 
       const initialMessage = this.reimu.awaitCallback.find(
-        (data) => data.id == decoded.replyFor
+        (data) => data.id == message.replyFor
       );
 
       if (!initialMessage) return;
@@ -53,7 +54,7 @@ export default class Message {
         this.reimu.awaitCallback.indexOf(initialMessage),
         1
       );
-      switch (decoded.type) {
+      switch (message.type) {
         case "acknoledge":
           if (initialMessage.callback.type != "acknoledge") return;
           initialMessage.callback.cb();
@@ -68,16 +69,19 @@ export default class Message {
           return;
       }
     } else {
-      this.id = decoded.id;
+      this.id = message.id;
 
-      switch (decoded.type) {
+      switch (message.type) {
         case "message":
-          this.reimu.emit("message", decoded.data);
+          this.reimu.emit("message", message.data);
           break;
         case "hello":
           this.reimu.emit("connect");
-          this.reimu.id = this.reimu.id || decoded.data.id;
+          this.reimu.id = this.reimu.id || message.data.id;
           this.respond({ id: this.reimu.id });
+          break;
+        case "close":
+          this.reimu.close = { code: message.data.code, server: false };
           break;
 
         default:

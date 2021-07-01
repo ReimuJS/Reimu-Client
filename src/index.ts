@@ -17,8 +17,12 @@ export class Reimu extends EventEmitter {
   private url;
   private ws?: WebSocket;
   private messageId;
-  private closeCode: number;
   private connected: boolean;
+
+  /**
+   * Close info
+   */
+  public close?: { code: number; server: boolean };
 
   /**
    * The id of the connection
@@ -71,7 +75,7 @@ export class Reimu extends EventEmitter {
     this.ws.addEventListener("open", this.open);
     this.ws.addEventListener("message", this.message);
     this.ws.addEventListener("error", this.error);
-    this.ws.addEventListener("close", this.close);
+    this.ws.addEventListener("close", this.onClose);
   };
 
   /**
@@ -79,7 +83,7 @@ export class Reimu extends EventEmitter {
    * @param {number} code - The error code
    */
   public disconnect = (code: number) => {
-    this.closeCode = code;
+    this.close = { code, server: false };
     const mId = this.messageId++;
 
     const ifNotAcknoledge = setInterval(() => {
@@ -104,16 +108,25 @@ export class Reimu extends EventEmitter {
 
   private open = (event: Event) => {};
   private message = (event: MessageEvent) => {
-    new Message(event, this);
+    let decoded: any;
+    try {
+      decoded = msgpack.decode(new Uint8Array(event.data));
+    } catch (e) {
+      this.disconnect(1002);
+    }
+
+    if (!decoded) return;
+
+    new Message(decoded, this);
   };
   private error = (event: Event) => {};
-  private close = (event: CloseEvent) => {
+  private onClose = (event: CloseEvent) => {
     this.ws.removeEventListener("open", this.open);
     this.ws.removeEventListener("message", this.message);
     this.ws.removeEventListener("error", this.error);
-    this.ws.removeEventListener("close", this.close);
+    this.ws.removeEventListener("close", this.onClose);
 
-    this.emit("close", this.closeCode || event.code, !this.closeCode);
+    this.emit("close", this.close.code || event.code, !!this.close.server);
     this.connected = false;
   };
 
