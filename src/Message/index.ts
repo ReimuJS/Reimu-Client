@@ -88,6 +88,8 @@ export default class Message {
           this.reimu.disconnect(1002);
           return;
       }
+
+      this.reimu.acknoledge(this);
     }
   }
 

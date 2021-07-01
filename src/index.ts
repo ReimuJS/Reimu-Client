@@ -131,7 +131,7 @@ export class Reimu extends EventEmitter {
   };
 
   /**
-   * Responds to the message.
+   * Responds to the message
    * @param {any} data - Data to be sent
    * @param {Message} message - Message Class
    * @returns {void}
@@ -139,6 +139,15 @@ export class Reimu extends EventEmitter {
   public respond = (data: any, message: Message): void => {
     this.sendRaw({ for: message.id, type: "response", data });
   };
+
+  /**
+   * Acknoledges the message
+   * @param {Message} message - Message Class
+   * @returns {void}
+   */
+  public acknoledge(message: Message): void {
+    this.sendRaw({ for: message.id, type: "acknoledge" });
+  }
 }
 
 interface DecodedMessage {
