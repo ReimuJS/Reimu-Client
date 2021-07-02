@@ -20,9 +20,14 @@ export class Reimu extends EventEmitter {
   private connected: boolean;
 
   /**
+   * Last sent packet
+   */
+  public lastContact: { client: Date; server: Date };
+
+  /**
    * Close info
    */
-  public close?: { code: number; server: boolean };
+  public close?: { code: number; server: boolean | "unexpected" | "ping" };
 
   /**
    * The id of the connection
@@ -35,6 +40,12 @@ export class Reimu extends EventEmitter {
    * @type {DecodedMessage[]}
    */
   public droppedPackets: DecodedMessage[] = [];
+
+  /**
+   * Packets that are being queued
+   * @type {DecodedMessage[]}
+   */
+  public queue: DecodedMessage[] = [];
 
   /**
    * Messages that are awaiting callbacks
@@ -58,14 +69,27 @@ export class Reimu extends EventEmitter {
       | { cb: () => void; type: "acknoledge" },
     system?: boolean
   ) => {
+    if (data.type != "batch") {
+      this.droppedPackets.push({ ...data, system: !!system });
+
+      if (!!callback) {
+        this.awaitCallback.push({ ...data, callback });
+      }
+
+      if (this.ws.bufferedAmount > 512) {
+        this.queue.push({ ...data, system: !!system });
+        return;
+      }
+    }
+
+    if (!this.connected) {
+      this.queue.push({ ...data, system: !!system });
+      return;
+    }
+
     const dataEncoded = msgpack.encode(data);
+    this.lastContact.client = new Date();
     this.ws?.send(dataEncoded);
-
-    this.droppedPackets.push({ ...data, system: !!system });
-
-    if (!!callback) {
-      this.awaitCallback.push({ ...data, callback });
-    } else return;
   };
 
   private connect = () => {
