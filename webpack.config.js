@@ -1,31 +1,40 @@
 const path = require("path");
+const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
 
 module.exports = {
-  mode: process.env.NODE_ENV,
-  devtool: "inline-source-map",
   entry: {
-    main: "./src/index.ts",
+    reimu: "./src/index.ts",
+    "reimu.min": "./src/index.ts",
   },
   output: {
-    path: path.resolve(__dirname, "./dist"),
-    filename: "client.js",
+    path: path.resolve(__dirname, "_bundles"),
+    filename: "[name].js",
+    libraryTarget: "umd",
+    library: "Reimu",
+    umdNamedDefine: true,
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
   },
+  devtool: "source-map",
+  plugins: [
+    new UglifyJsPlugin({
+      sourceMap: true,
+      include: /\.min\.js$/,
+    }),
+  ],
   module: {
     rules: [
       {
         test: /\.tsx?$/,
         use: [
           {
-            loader: "expose-loader",
+            loader: "awesome-typescript-loader",
             options: {
-              exposes: { globalName: "Reimu", moduleLocalName: "Reimu" },
+              query: {
+                declaration: false,
+              },
             },
-          },
-          {
-            loader: "ts-loader",
           },
         ],
         exclude: /node_modules/,

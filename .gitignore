@@ -105,3 +105,8 @@ dist
 
 # Testing
 *test*
+
+node_modules
+lib
+lib-esm
+_bundles
