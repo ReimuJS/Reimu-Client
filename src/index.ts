@@ -1,4 +1,5 @@
 import Client from "./client";
+import { Buffer } from "buffer/";
 
 export { Client };
 

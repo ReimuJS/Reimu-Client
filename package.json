@@ -4,6 +4,7 @@
   "description": "Simple and reliable real-time bidirectional communication",
   "scripts": {
     "build": "pnpm clean && tsc && tsc -m es6 --outDir lib-esm && webpack",
+    "dev": "webpack -w --mode development",
     "clean": "shx rm -rf _bundles lib lib-esm",
     "commit": "git-cz",
     "acp": "git add . && npm run commit && git push"
@@ -34,6 +35,7 @@
     "webpack-cli": "^4.9.1"
   },
   "dependencies": {
+    "buffer": "^6.0.3",
     "msgpackr": "^1.5.1"
   }
 }

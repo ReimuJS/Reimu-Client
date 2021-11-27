@@ -103,9 +103,6 @@ dist
 # TernJS port file
 .tern-port
 
-# Testing
-*test*
-
 node_modules
 lib
 lib-esm
