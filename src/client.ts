@@ -12,14 +12,19 @@ export default function Client<MessageType>(
   options?: Partial<options<MessageType>>
 ) {
   const opts: options<MessageType> = {
+    timeoutDelay: 5,
     reconnectTimeout: 40,
     ...options,
   };
+
+  let generalTimer: NodeJS.Timeout | null = null;
 
   let ws: WebSocket;
   let id: string | null = null;
 
   function Open(newId: boolean = false) {
+    generalTimer && clearInterval(generalTimer);
+    generalTimer = null;
     if (newId) id = null;
     if (ws) {
       // Discard the old socket entirely
@@ -35,6 +40,16 @@ export default function Client<MessageType>(
     ws.binaryType = "arraybuffer";
 
     //TODO Timer to check for buffer drainage
+
+    generalTimer = setInterval(() => {
+      if (conn.awaitingData.length > 1 && ws.bufferedAmount < 512) {
+        conn.sendRaw(
+          createBufferMessage(
+            conn.awaitingData.splice(0, conn.awaitingData.length)
+          )
+        );
+      }
+    }, opts.timeoutDelay * 1000);
 
     ws.onopen = () => {
       if (newId || !id) {
@@ -163,6 +178,8 @@ function createBufferMessage(buffers: Buffer[]): Buffer {
 }
 
 export interface options<MessageType> {
+  /** Number of seconds to check for general events. Defaults to 5. */
+  timeoutDelay: number;
   /** Maximum time in seconds that the client can be disconnected before it will no longer be allowed to reconnect. Defaults to 40. */
   reconnectTimeout: number;
 
