@@ -19,6 +19,8 @@ export default function Client<MessageType>(
 
   let generalTimer: NodeJS.Timeout | null = null;
 
+  let reconnectAmount = 0;
+
   let ws: WebSocket;
   let id: string | null = null;
 
@@ -39,10 +41,8 @@ export default function Client<MessageType>(
     let conn = createWebSocketManager(ws);
     ws.binaryType = "arraybuffer";
 
-    //TODO Timer to check for buffer drainage
-
     generalTimer = setInterval(() => {
-      if (conn.awaitingData.length > 1 && ws.bufferedAmount < 512) {
+      if (conn.awaitingData.length > 0 && ws.bufferedAmount < 512) {
         conn.sendRaw(
           createBufferMessage(
             conn.awaitingData.splice(0, conn.awaitingData.length)
@@ -62,7 +62,7 @@ export default function Client<MessageType>(
       const data = event.data;
       if (data instanceof ArrayBuffer) {
         if (!id) {
-          Open(true);
+          Reconnect(true);
           return;
         }
         const rawMessage = decodeRawMessage(data);
@@ -138,6 +138,7 @@ export default function Client<MessageType>(
         }
       } else {
         id = data;
+        reconnectAmount = 0;
         opts.open && opts.open(conn);
       }
     };
@@ -148,17 +149,30 @@ export default function Client<MessageType>(
           conn.mayReconnect = false;
           opts.close && opts.close(conn, event.reason);
           break;
-        case 1002:
-          opts.disconnect && opts.disconnect(conn, event.reason);
-          break;
-        case 1006:
-          opts.disconnect && opts.disconnect(conn, event.reason);
-          break;
         default:
           opts.disconnect && opts.disconnect(conn, event.reason);
           break;
       }
+      if (conn.mayReconnect) {
+        Reconnect(conn.disconnected);
+      }
     };
+  }
+
+  function Reconnect(disconnected: number): void;
+  function Reconnect(newId: true): void;
+  function Reconnect(arg: number | true) {
+    setTimeout(() => {
+      if (
+        (typeof arg === "number"
+          ? arg + opts.reconnectTimeout * 1000 > Date.now()
+          : true) && opts.connectAttempts
+          ? reconnectAmount < opts.connectAttempts
+          : true
+      ) {
+        Open(arg === true);
+      }
+    }, 2 ** reconnectAmount * 500);
   }
 
   Open(true);
@@ -178,6 +192,9 @@ function createBufferMessage(buffers: Buffer[]): Buffer {
 }
 
 export interface options<MessageType> {
+  /** The maximum amount of connection attempts allowed before it will stop trying to connect. */
+  connectAttempts?: number;
+
   /** Number of seconds to check for general events. Defaults to 5. */
   timeoutDelay: number;
   /** Maximum time in seconds that the client can be disconnected before it will no longer be allowed to reconnect. Defaults to 40. */
@@ -187,7 +204,7 @@ export interface options<MessageType> {
   open?: (connection: WebSocketManager<MessageType>) => any;
   /** Handler for new Message. */
   message?: (message: Message<MessageType>) => any;
-  /** Handler for disconnection due to ping timeout (reconnects still allowed). */
+  /** Handler for disconnection due to ping timeout / couldn't connect (reconnects still allowed). */
   disconnect?: (connection: WebSocketManager<MessageType>, reason: any) => any;
   /** Handler for close event. */
   close?: (connection: WebSocketManager<MessageType>, reason: any) => any;
