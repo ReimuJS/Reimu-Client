@@ -48,6 +48,15 @@ export default function Client<MessageType>(
             conn.awaitingData.splice(0, conn.awaitingData.length)
           )
         );
+        if (conn.disconnected == -1) {
+          let packets = [
+            ...conn.acknoledgeList.out[rawTypes.UDATA].map(({ data }) => data),
+            ...conn.acknoledgeList.out[rawTypes.URES].map(({ data }) => data),
+          ];
+          if (packets.length) {
+            conn.sendRaw(createBufferMessage(packets));
+          }
+        }
       }
     }, opts.timeoutDelay * 1000);
 
