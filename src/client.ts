@@ -70,11 +70,14 @@ export default function Client<MessageType>(
           switch (decoded.type) {
             case rawTypes.ACK:
               {
-                const i = conn.acknoledgeList.out[decoded.to].indexOf(
-                  decoded.id
+                const packet = conn.acknoledgeList.out[decoded.to].find(
+                  (x) => x.id == decoded.id
                 );
-                if (i > -1) {
-                  conn.acknoledgeList.out[decoded.to].splice(i, 1);
+                if (packet) {
+                  const i = conn.acknoledgeList.out[decoded.to].indexOf(packet);
+                  if (i > -1) {
+                    conn.acknoledgeList.out[decoded.to].splice(i, 1);
+                  }
                 }
               }
               break;

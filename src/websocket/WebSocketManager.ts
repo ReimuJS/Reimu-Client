@@ -27,8 +27,8 @@ export default function createWebSocketManager<MessageType>(
       [rawTypes.URES]: number[];
     };
     out: {
-      [rawTypes.UDATA]: number[];
-      [rawTypes.URES]: number[];
+      [rawTypes.UDATA]: { id: number; data: Buffer }[];
+      [rawTypes.URES]: { id: number; data: Buffer }[];
     };
   } = {
     in: {
@@ -66,7 +66,7 @@ export default function createWebSocketManager<MessageType>(
       ]);
       sendRaw(message);
 
-      acknoledgeList.out[rawTypes.UDATA].push(id);
+      acknoledgeList.out[rawTypes.UDATA].push({ id, data: message });
 
       onReply && replyHandlers.push({ id, handler: onReply });
     },
@@ -79,7 +79,10 @@ export default function createWebSocketManager<MessageType>(
       ]);
       sendRaw(message);
 
-      acknoledgeList.out[rawTypes.UDATA].push(originalMessage.id);
+      acknoledgeList.out[rawTypes.URES].push({
+        id: originalMessage.id,
+        data: message,
+      });
     },
   };
 }
@@ -98,7 +101,7 @@ export interface WebSocketManager<MessageType> {
   /** List of outgoing ids waiting to be acknoledged and inboung ids already acknoledged. */
   acknoledgeList: {
     in: Record<rawTypes.UDATA | rawTypes.URES, number[]>;
-    out: Record<rawTypes.UDATA | rawTypes.URES, number[]>;
+    out: Record<rawTypes.UDATA | rawTypes.URES, { id: number; data: Buffer }[]>;
   };
   /** Array of bufferred data awaiting backpressure to be drained . */
   awaitingData: Buffer[];
