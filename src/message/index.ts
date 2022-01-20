@@ -11,6 +11,10 @@ export type messageDecoded =
       id: number;
       type: rawTypes.ACK;
       to: rawTypes.UDATA | rawTypes.URES;
+    }
+  | {
+      type: rawTypes.USDATA;
+      data: Buffer;
     };
 
 export function decodeRawMessage(
@@ -19,6 +23,12 @@ export function decodeRawMessage(
   const bufferMessage = Buffer.from(message);
   const type = bufferMessage[0];
   switch (type) {
+    case rawTypes.USDATA: {
+      return {
+        type,
+        data: bufferMessage.slice(1),
+      };
+    }
     case rawTypes.ACK: {
       const to = bufferMessage[1];
       const id = parseInt(bufferMessage.slice(2).toString("hex"), 16);

@@ -16,7 +16,7 @@ export default function createWebSocketManager<MessageType>(
     if (disconnected === -1 && ws.bufferedAmount < 512) {
       ws.send(packedMessage);
     } else {
-      awaitingData.push(packedMessage);
+      packedMessage[0] != rawTypes.USDATA && awaitingData.push(packedMessage);
     }
   }
   let replyHandlers: { id: number; handler: (message: any) => any }[] = [];
@@ -71,6 +71,14 @@ export default function createWebSocketManager<MessageType>(
       onReply && replyHandlers.push({ id, handler: onReply });
     },
 
+    stream: (data) => {
+      const message = Buffer.concat([
+        Buffer.from([rawTypes.USDATA]),
+        pack(data),
+      ]);
+      sendRaw(message);
+    },
+
     reply: (originalMessage, data) => {
       const message = Buffer.concat([
         Buffer.from([rawTypes.URES]),
@@ -114,7 +122,9 @@ export interface WebSocketManager<MessageType> {
   /** Sends a raw message. */
   sendRaw: (packedMessage: Buffer) => void;
   /** Send a message. */
-  send: (data: MessageType, onReply?: (message: any) => any) => void;
+  send: (data: any, onReply?: (message: any) => any) => void;
+  /** Send a stream message (message that isn't always expected to be recieved). */
+  stream: (data: any) => void;
   /** Send a reply. */
   reply(originalMessage: Message<MessageType>, data: any): void;
 

@@ -117,6 +117,11 @@ export default function Client<MessageType>(
               }
               return createAckMessage(decoded.id, rawTypes.URES);
             }
+            case rawTypes.USDATA: {
+              if (opts.stream) {
+                opts.stream(unpack(decoded.data));
+              }
+            }
           }
         };
         if (Array.isArray(rawMessage)) {
@@ -216,6 +221,8 @@ export interface options<MessageType> {
   open?: (connection: WebSocketManager<MessageType>) => any;
   /** Handler for new Message. */
   message?: (message: Message<MessageType>) => any;
+  /** Handler for stream data (data that isn't always expected to be recieved). */
+  stream?: (message: any) => any;
   /** Handler for disconnection due to ping timeout / couldn't connect (reconnects still allowed). */
   disconnect?: (connection: WebSocketManager<MessageType>, reason: any) => any;
   /** Handler for close event. */
