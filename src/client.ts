@@ -135,7 +135,7 @@ export default function Client<MessageType>(
               return false;
             } catch (e) {
               conn.expectedClose = true;
-              ws.close(1002, "Invalid Message");
+              ws.close(4002, "Invalid Message");
               return true;
             }
           });
@@ -150,7 +150,7 @@ export default function Client<MessageType>(
             }
           } catch (e) {
             conn.expectedClose = true;
-            ws.close(1002, "Invalid Message");
+            ws.close(4002, "Invalid Message");
           }
         }
       } else {
